@@ -1,0 +1,22 @@
+##params[conv]: 433920
+##params[virt]: 213760
+##params[att]: 221952
+##params[conv]: 433920
+##params[virt]: 213760
+##params[att]: 221952
+##params[conv]: 433920
+##params[virt]: 213760
+##params[att]: 221952
+##params[conv]: 433920
+##params[virt]: 213760
+##params[att]: 221952
+##params[conv]: 433920
+##params[virt]: 213760
+##params[att]: 221952
+#params: 5460225
+
+Evaluating...
+#mae: 0.0932796522974968
+
+Saving test submission file...
+
