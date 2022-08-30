@@ -28,5 +28,5 @@ and the preprint is available at
 [^2]: This project is based on [OGB LSC source
 codes](https://github.com/snap-stanford/ogb/tree/master/examples/lsc/wikikg90m-v2),
 and most modifications can be found in
-[modify.py](https://github.com/xfcui/CoAtGIN/blob/main/src.tiny/modify.py).
+[modify.py](https://github.com/xfcui/CoAtGIN/blob/main/submit.tiny/modify.py).
 
