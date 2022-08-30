@@ -25,5 +25,5 @@ Moreover, using the linear attention block improves the
 performance, which helps to capture the global representation.
 The source codes are avialable at this GitHub public repository[^2].
 
-[^1]: link to bioaxiv (TBA)
+[^1]: The original paper has been submitted to related journals/conferences, and the preprint is available at [bioRxiv](https://biorxiv.org/cgi/content/short/2022.08.26.505499v1).
 [^2]: This project is based on [OGB LSC source codes](https://github.com/snap-stanford/ogb/tree/master/examples/lsc/wikikg90m-v2), and most modifications can be found in "modify.py".
