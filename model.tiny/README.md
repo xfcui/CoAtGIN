@@ -1,4 +1,4 @@
-# CoAtGIN.tiny with less than 6.6M parameters and linear complexity
+# CoAtGIN.tiny with less than 10M parameters and linear complexity
 
 This project is based on [OGB LSC source
 codes](https://github.com/snap-stanford/ogb/tree/master/examples/lsc/wikikg90m-v2),
