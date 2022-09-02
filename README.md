@@ -18,15 +18,9 @@ aggregate global graph representation according to the importance of each node
 and edge. In the recent OGB Large-Scale Benchmark, CoAtGIN achieves the 0.0933
 Mean Absolute Error (MAE) on the large-scale dataset PCQM4Mv2 with only 5.6 M
 model parameters.  Moreover, using the linear attention block improves the
-performance, which helps to capture the global representation.  The source
-codes are avialable at this GitHub public repository[^2].
+performance, which helps to capture the global representation.
 
 [^1]: The original paper has been submitted to related journals/conferences,
 and the preprint is available at
 [bioRxiv](https://biorxiv.org/cgi/content/short/2022.08.26.505499v1).
-
-[^2]: This project is based on [OGB LSC source
-codes](https://github.com/snap-stanford/ogb/tree/master/examples/lsc/wikikg90m-v2),
-and most modifications can be found in
-[modify.py](https://github.com/xfcui/CoAtGIN/blob/main/model.tiny/modify.py).
 
