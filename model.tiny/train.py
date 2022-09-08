@@ -93,8 +93,8 @@ def test(model, loader):
 def main():
     # Training settings
     parser = argparse.ArgumentParser(description='GNN baselines on pcqm4m with Pytorch Geometrics')
-    parser.add_argument('--gnn', type=str, default='gin-plus311',
-                        help='GNN gin-plus311 (default: gin-plus311)')
+    parser.add_argument('--gnn', type=str, default='gin-plus411',
+                        help='GNN gin-plus411 (default: gin-plus411)')
     parser.add_argument('--graph_pooling', type=str, default='sum',
                         help='graph pooling strategy mean or sum (default: sum)')
     parser.add_argument('--drop_ratio', type=float, default=0,
@@ -160,6 +160,8 @@ def main():
         model = GNN(gnn_type='gin', virtual_node=4, conv_hop=3, **shared_params).cuda()
     elif args.gnn == 'gin-plus311':
         model = GNN(gnn_type='gin', virtual_node=5, conv_hop=3, **shared_params).cuda()
+    elif args.gnn == 'gin-plus411':
+        model = GNN(gnn_type='gin', virtual_node=5, conv_hop=4, **shared_params).cuda()
     else:
         raise ValueError('Invalid GNN type')
     print('#params:', np.sum([np.prod(p.shape) for p in model.parameters()]))
