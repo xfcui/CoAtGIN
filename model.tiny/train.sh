@@ -4,6 +4,6 @@ model=gin-plus411
 
 mkdir -p $model
 python3 -BuW ignore github/model.tiny/train.py \
-        --gnn $model --epochs 160 --checkpoint $model --save_test_dir $model \
+        --gnn $model --checkpoint $model --save_test_dir $model \
         >$model/stdout.log 2>$model/stderr.log &
 

@@ -106,8 +106,8 @@ def main():
     parser.add_argument('--train_subset', action='store_true')
     parser.add_argument('--batch_size', type=int, default=512,
                         help='input batch size for training (default: 512)')
-    parser.add_argument('--epochs', type=int, default=100,
-                        help='number of epochs to train (default: 100)')
+    parser.add_argument('--epochs', type=int, default=120,
+                        help='number of epochs to train (default: 120)')
     parser.add_argument('--num_workers', type=int, default=4,
                         help='number of workers (default: 4)')
     parser.add_argument('--log_dir', type=str, default="",

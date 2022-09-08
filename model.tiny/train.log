@@ -1,4 +1,4 @@
-Namespace(batch_size=512, checkpoint_dir='gin-plus411-a40-dev0', drop_ratio=0, emb_dim=256, epochs=160, gnn='gin-plus411', graph_pooling='sum', log_dir='', num_layers=5, num_workers=4, save_test_dir='gin-plus411-a40-dev0', train_subset=False)
+Namespace(batch_size=512, checkpoint_dir='gin-plus411-a40-dev0', drop_ratio=0, emb_dim=256, epochs=120, gnn='gin-plus411', graph_pooling='sum', log_dir='', num_layers=5, num_workers=4, save_test_dir='gin-plus411-a40-dev0', train_subset=False)
 ##params[conv]: 578560
 ##params[virt]: 213760
 ##params[att]: 221952
@@ -596,4 +596,9 @@ Evaluating...
 #summary: 0.0586 0.0918 5.21e-05
 Best validation MAE so far: 0.09157370775938034
 =====Epoch 99
+Training...
+Evaluating...
+#summary: 0.0583 0.0917 4.98e-05
+Best validation MAE so far: 0.09157370775938034
+=====Epoch 100
 Training...
