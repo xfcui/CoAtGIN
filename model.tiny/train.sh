@@ -1,9 +1,10 @@
 #!/bin/bash
 
-model=gin-plus411
+model=coat3211
+logdir=train-$model
 
-mkdir -p $model
-python3 -BuW ignore github/model.tiny/train.py \
-        --gnn $model --checkpoint $model --save_test_dir $model \
-        >$model/stdout.log 2>$model/stderr.log &
+mkdir -p $logdir
+python3 -BuW ignore \
+        github/model.tiny/train.py --gnn $model --checkpoint $logdir --save_test_dir $logdir \
+        >$logdir/stdout.log 2>$logdir/stderr.log &
 

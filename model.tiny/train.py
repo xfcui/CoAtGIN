@@ -19,7 +19,7 @@ from ogb.lsc import PygPCQM4Mv2Dataset, PCQM4Mv2Evaluator
 
 reg_criterion = torch.nn.L1Loss()
 
-learn_rate, weight_decay = 4e-4, 1e-1
+learn_rate, weight_decay = 3e-3, 2e-2
 def param(model, lr=learn_rate, wd=weight_decay):
     param_groups = [{'params': [], 'lr': lr,   'weight_decay': 0},
                     {'params': [], 'lr': lr,   'weight_decay': wd},
@@ -93,27 +93,30 @@ def test(model, loader):
 def main():
     # Training settings
     parser = argparse.ArgumentParser(description='GNN baselines on pcqm4m with Pytorch Geometrics')
-    parser.add_argument('--gnn', type=str, default='gin-plus411',
-                        help='GNN gin-plus411 (default: gin-plus411)')
+    parser.add_argument('--gnn', type=str, default='coat3211',
+                        help='GNN coat3211 (default: coat3211)')
     parser.add_argument('--graph_pooling', type=str, default='sum',
                         help='graph pooling strategy mean or sum (default: sum)')
     parser.add_argument('--drop_ratio', type=float, default=0,
                         help='dropout ratio (default: 0)')
-    parser.add_argument('--num_layers', type=int, default=5,
-                        help='number of GNN message passing layers (default: 5)')
+    parser.add_argument('--num_layers', type=int, default=4,
+                        help='number of GNN message passing layers (default: 4)')
     parser.add_argument('--emb_dim', type=int, default=256,
                         help='dimensionality of hidden units in GNNs (default: 256)')
-    parser.add_argument('--train_subset', action='store_true')
     parser.add_argument('--batch_size', type=int, default=512,
                         help='input batch size for training (default: 512)')
+    parser.add_argument('--warmups', type=int, default=20,
+                        help='number of warmups to train (default: 20)')
     parser.add_argument('--epochs', type=int, default=120,
                         help='number of epochs to train (default: 120)')
     parser.add_argument('--num_workers', type=int, default=4,
                         help='number of workers (default: 4)')
     parser.add_argument('--log_dir', type=str, default="",
                         help='tensorboard log directory')
-    parser.add_argument('--checkpoint_dir', type=str, default = '', help='directory to save checkpoint')
-    parser.add_argument('--save_test_dir', type=str, default = '', help='directory to save test submission file')
+    parser.add_argument('--checkpoint_dir', type=str, default = '',
+                        help='directory to save checkpoint')
+    parser.add_argument('--save_test_dir', type=str, default = '',
+                        help='directory to save test submission file')
     args = parser.parse_args()
     print(args)
 
@@ -125,18 +128,11 @@ def main():
     ### automatic evaluator. takes dataset name as input
     evaluator = PCQM4Mv2Evaluator()
 
-    if args.train_subset:
-        subset_ratio = 0.1
-        subset_idx = torch.randperm(len(split_idx["train"]))[:int(subset_ratio*len(split_idx["train"]))]
-        train_loader = DataLoader(dataset[split_idx["train"][subset_idx]], batch_size=args.batch_size, shuffle=True, num_workers = args.num_workers)
-    else:
-        train_loader = DataLoader(dataset[split_idx["train"]], batch_size=args.batch_size, shuffle=True, num_workers = args.num_workers)
-
+    train_loader = DataLoader(dataset[split_idx["train"]], batch_size=args.batch_size, shuffle=True, num_workers = args.num_workers)
     valid_loader = DataLoader(dataset[split_idx["valid"]], batch_size=args.batch_size, shuffle=False, num_workers = args.num_workers)
 
     if args.save_test_dir != '':
         testdev_loader = DataLoader(dataset[split_idx["test-dev"]], batch_size=args.batch_size, shuffle=False, num_workers = args.num_workers)
-        testchallenge_loader = DataLoader(dataset[split_idx["test-challenge"]], batch_size=args.batch_size, shuffle=False, num_workers = args.num_workers)
 
     if args.checkpoint_dir != '':
         os.makedirs(args.checkpoint_dir, exist_ok = True)
@@ -148,20 +144,20 @@ def main():
         'graph_pooling': args.graph_pooling
     }
 
-    if args.gnn == 'gin-plus100':
-        model = GNN(gnn_type='gin', virtual_node=2, conv_hop=1, **shared_params).cuda()
-    elif args.gnn == 'gin-plus200':
-        model = GNN(gnn_type='gin', virtual_node=2, conv_hop=2, **shared_params).cuda()
-    elif args.gnn == 'gin-plus300':
-        model = GNN(gnn_type='gin', virtual_node=2, conv_hop=3, **shared_params).cuda()
-    elif args.gnn == 'gin-plus310':
-        model = GNN(gnn_type='gin', virtual_node=3, conv_hop=3, **shared_params).cuda()
-    elif args.gnn == 'gin-plus301':
-        model = GNN(gnn_type='gin', virtual_node=4, conv_hop=3, **shared_params).cuda()
-    elif args.gnn == 'gin-plus311':
-        model = GNN(gnn_type='gin', virtual_node=5, conv_hop=3, **shared_params).cuda()
-    elif args.gnn == 'gin-plus411':
-        model = GNN(gnn_type='gin', virtual_node=5, conv_hop=4, **shared_params).cuda()
+    if   args.gnn == 'coat1100':
+        model = GNN(gnn_type='gin', virtual_node=2, conv_hop=1, conv_kernel=1, **shared_params).cuda()
+    elif args.gnn == 'coat2100':
+        model = GNN(gnn_type='gin', virtual_node=2, conv_hop=2, conv_kernel=1, **shared_params).cuda()
+    elif args.gnn == 'coat3100':
+        model = GNN(gnn_type='gin', virtual_node=2, conv_hop=3, conv_kernel=1, **shared_params).cuda()
+    elif args.gnn == 'coat3200':
+        model = GNN(gnn_type='gin', virtual_node=2, conv_hop=3, conv_kernel=2, **shared_params).cuda()
+    elif args.gnn == 'coat3210':
+        model = GNN(gnn_type='gin', virtual_node=3, conv_hop=3, conv_kernel=2, **shared_params).cuda()
+    elif args.gnn == 'coat3201':
+        model = GNN(gnn_type='gin', virtual_node=4, conv_hop=3, conv_kernel=2, **shared_params).cuda()
+    elif args.gnn == 'coat3211':
+        model = GNN(gnn_type='gin', virtual_node=5, conv_hop=3, conv_kernel=2, **shared_params).cuda()
     else:
         raise ValueError('Invalid GNN type')
     print('#params:', np.sum([np.prod(p.shape) for p in model.parameters()]))
@@ -172,11 +168,11 @@ def main():
     optimizer = optim.AdamW(param(model), lr=learn_rate, weight_decay=weight_decay, betas=(0.9, 0.998))
     sched0 = LinearLR(optimizer, 1e-4, 1.0)
     sched1 = ConstantLR(optimizer, 1.0)
-    sched2 = ExponentialLR(optimizer, 0.01**(1/85))
-    sched = SequentialLR(optimizer, [sched0, sched1, sched2], [5, 9])
+    sched2 = ExponentialLR(optimizer, 0.01**0.01)
+    sched = SequentialLR(optimizer, [sched0, sched1, sched2], [args.warmups//5, args.warmups])
 
     best_valid_mae = 9999
-    for epoch in range(1, args.epochs + 1):
+    for epoch in range(args.warmups+args.epochs+1):
         print("=====Epoch {}".format(epoch))
         print('Training...')
         train_mae = train(model, train_loader, optimizer)
@@ -201,12 +197,8 @@ def main():
                 testdev_pred = test(model, testdev_loader)
                 testdev_pred = testdev_pred.cpu().detach().numpy()
 
-                testchallenge_pred = test(model, testchallenge_loader)
-                testchallenge_pred = testchallenge_pred.cpu().detach().numpy()
-
                 print('Saving test submission file...')
                 evaluator.save_test_submission({'y_pred': testdev_pred}, args.save_test_dir, mode = 'test-dev')
-                evaluator.save_test_submission({'y_pred': testchallenge_pred}, args.save_test_dir, mode = 'test-challenge')
 
         sched.step()
             

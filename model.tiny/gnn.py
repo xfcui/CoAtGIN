@@ -5,14 +5,14 @@ import torch.nn.functional as F
 from torch_geometric.nn.inits import uniform
 
 from conv import GNN_node, GNN_node_Virtualnode
-from modify import GINplus
+from modify import CoAtGIN
 
 from torch_scatter import scatter_mean
 
 class GNN(torch.nn.Module):
 
     def __init__(self, num_tasks = 1, num_layers = 5, emb_dim = 300, 
-                    gnn_type = 'gin', virtual_node = 2, conv_hop = 2, residual = False,
+                    gnn_type = 'gin', virtual_node = 2, conv_hop = 2, conv_kernel = 2, residual = False,
                     drop_ratio = 0, JK = "last", graph_pooling = "sum"):
         '''
             num_tasks (int): number of labels to be predicted
@@ -36,13 +36,13 @@ class GNN(torch.nn.Module):
         elif virtual_node == 1:
             self.gnn_node = GNN_node_Virtualnode(num_layers, emb_dim, JK=JK, drop_ratio=drop_ratio, residual=residual, gnn_type=gnn_type)
         elif virtual_node == 2:
-            self.gnn_node = GINplus(num_layers, emb_dim, conv_hop, JK=JK, gnn_type=gnn_type, use_virt=False, use_att=False)
+            self.gnn_node = CoAtGIN(num_layers, emb_dim, conv_hop, conv_kernel, JK=JK, gnn_type=gnn_type, use_virt=False, use_att=False)
         elif virtual_node == 3:
-            self.gnn_node = GINplus(num_layers, emb_dim, conv_hop, JK=JK, gnn_type=gnn_type, use_virt=True, use_att=False)
+            self.gnn_node = CoAtGIN(num_layers, emb_dim, conv_hop, conv_kernel, JK=JK, gnn_type=gnn_type, use_virt=True, use_att=False)
         elif virtual_node == 4:
-            self.gnn_node = GINplus(num_layers, emb_dim, conv_hop, JK=JK, gnn_type=gnn_type, use_virt=False, use_att=True)
+            self.gnn_node = CoAtGIN(num_layers, emb_dim, conv_hop, conv_kernel, JK=JK, gnn_type=gnn_type, use_virt=False, use_att=True)
         elif virtual_node == 5:
-            self.gnn_node = GINplus(num_layers, emb_dim, conv_hop, JK=JK, gnn_type=gnn_type, use_virt=True, use_att=True)
+            self.gnn_node = CoAtGIN(num_layers, emb_dim, conv_hop, conv_kernel, JK=JK, gnn_type=gnn_type, use_virt=True, use_att=True)
         else:
             raise ValueError("Invalid graph type.")
 
@@ -71,7 +71,8 @@ class GNN(torch.nn.Module):
         h = self.pool(h, batched_data.batch)
         h = self.norm(h)
         h = self.head(h)
-        return h  # without clamp
+        if not self.training: h.clamp_(0, 20)
+        return h
 
 
 if __name__ == '__main__':
