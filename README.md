@@ -15,8 +15,8 @@ Attention. On the local level, khop convolution is designed to capture
 long-range neighbour information. On the global level, besides using the
 virtual node to pass identical messages, we utilize linear attention to
 aggregate global graph representation according to the importance of each node
-and edge. In the recent OGB Large-Scale Benchmark, CoAtGIN achieves the 0.0933
-Mean Absolute Error (MAE) on the large-scale dataset PCQM4Mv2 with only 5.6 M
+and edge. In the recent OGB Large-Scale Benchmark, CoAtGIN achieves the 0.0900
+Mean Absolute Error (MAE) on the large-scale dataset PCQM4Mv2 with only 6.3 M
 model parameters.  Moreover, using the linear attention block improves the
 performance, which helps to capture the global representation.
 
