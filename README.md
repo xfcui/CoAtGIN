@@ -1,6 +1,6 @@
 # CoAtGIN: Marrying Convolution and Attention for Graph-based Molecule Property Prediction
 
-<img src="https://user-images.githubusercontent.com/25788176/187106827-40d240fb-c8c3-49e9-a92c-e31c3d48a43a.png" width="640" />
+<img src="https://user-images.githubusercontent.com/14835224/191413262-94b2897c-f4c4-4a9c-b993-839d392b4ff1.png" width="640" />
 
 Molecule property prediction based on computational strategy plays a key role
 in the process of drug discovery and design, such as DFT. Yet, these
