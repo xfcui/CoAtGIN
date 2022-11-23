@@ -14,6 +14,8 @@ and most modifications can be found in
 python3 -BuW ignore  train.py --gnn coat3211 --checkpoint_dir . --save_test_dir .
 ```
 
+## Performance on OGB-LSC Leaderboards
+
 This project has been finalized with the latest submission (named CoAtGIN-tiny with an testing MAE of 0.0908) to
 [OGB-LSC Leaderboards](https://ogb.stanford.edu/docs/lsc/leaderboards/) on Sep 20, 2022.
 
