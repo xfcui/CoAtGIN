@@ -6,6 +6,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torch.optim.lr_scheduler import LinearLR, ConstantLR, ExponentialLR, SequentialLR
 
 from gnn import GNN
+from adan import Adan
 
 import os
 from tqdm import tqdm
@@ -121,8 +122,7 @@ def main():
     print(args)
 
     ### automatic dataloading and splitting
-    dataset = PygPCQM4Mv2Dataset(root = 'dataset/')
-
+    dataset = PygPCQM4Mv2Dataset(root = 'data/')
     split_idx = dataset.get_idx_split()
 
     ### automatic evaluator. takes dataset name as input
@@ -165,10 +165,10 @@ def main():
     if args.log_dir != '':
         writer = SummaryWriter(log_dir=args.log_dir)
 
-    optimizer = optim.AdamW(param(model), lr=learn_rate, weight_decay=weight_decay, betas=(0.9, 0.998))
+    optimizer = Adan(param(model), lr=learn_rate, weight_decay=weight_decay)
     sched0 = LinearLR(optimizer, 1e-4, 1.0)
     sched1 = ConstantLR(optimizer, 1.0)
-    sched2 = ExponentialLR(optimizer, 0.01**0.01)
+    sched2 = ExponentialLR(optimizer, (1e-5/learn_rate)**(1/args.epochs))
     sched = SequentialLR(optimizer, [sched0, sched1, sched2], [args.warmups//5, args.warmups])
 
     best_valid_mae = 9999
@@ -193,7 +193,7 @@ def main():
                 checkpoint = {'epoch': epoch, 'model_state_dict': model.state_dict(), 'optimizer_state_dict': optimizer.state_dict(), 'best_val_mae': best_valid_mae}
                 torch.save(checkpoint, os.path.join(args.checkpoint_dir, 'checkpoint.pt'))
 
-            if args.save_test_dir != '':
+            if args.save_test_dir != '' and best_valid_mae < 0.091:
                 testdev_pred = test(model, testdev_loader)
                 testdev_pred = testdev_pred.cpu().detach().numpy()
 
