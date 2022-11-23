@@ -5,7 +5,7 @@ codes](https://github.com/snap-stanford/ogb/tree/master/examples/lsc/wikikg90m-v
 and most modifications can be found in
 [modify.py](https://github.com/xfcui/CoAtGIN/blob/main/model.tiny/modify.py).
 
-## To train and to test a CoAtGIN model:
+## To train and to test your CoAtGIN model:
 ```
 python3 -BuW ignore  train.py --gnn coat3211 --checkpoint_dir . --save_test_dir .
 ```
