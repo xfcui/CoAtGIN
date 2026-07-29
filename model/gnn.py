@@ -1,3 +1,16 @@
+"""Graph-level wrapper: node encoder → pool → GroupNorm → linear head.
+
+``virtual_node`` selects the backbone (not a boolean):
+  0 — GIN/GCN without virtual node (``conv.GNN_node``)
+  1 — GIN/GCN with virtual node (``conv.GNN_node_Virtualnode``)
+  2 — CoAtGIN, conv only
+  3 — CoAtGIN + virtual node
+  4 — CoAtGIN + linear attention
+  5 — CoAtGIN + virtual node + linear attention (default ``coat3211``)
+
+Paper: https://ieeexplore.ieee.org/document/9995324/
+"""
+
 import torch
 from torch_geometric.nn import MessagePassing
 from torch_geometric.nn import global_add_pool, global_mean_pool, global_max_pool, GlobalAttention, Set2Set
@@ -10,14 +23,24 @@ from modify import CoAtGIN
 from torch_scatter import scatter_mean
 
 class GNN(torch.nn.Module):
+    """PCQM4Mv2 regression model wrapping a node encoder and a pooling head."""
 
     def __init__(self, num_tasks = 1, num_layers = 5, emb_dim = 300, 
                     gnn_type = 'gin', virtual_node = 2, conv_hop = 2, conv_kernel = 2, residual = False,
                     drop_ratio = 0, JK = "last", graph_pooling = "sum"):
-        '''
-            num_tasks (int): number of labels to be predicted
-            virtual_node (bool): whether to add virtual node or not
-        '''
+        """
+        Args:
+            num_tasks: output dimension (1 for HOMO–LUMO gap).
+            num_layers: message-passing depth.
+            emb_dim: hidden / embedding width.
+            gnn_type: ``'gin'`` or ``'gcn'`` for baselines (``virtual_node`` 0/1).
+            virtual_node: backbone selector; see module docstring (0–5).
+            conv_hop, conv_kernel: CoAtGIN ``ConvMessage`` depth (``virtual_node`` ≥ 2).
+            residual: residual connections in OGB baselines only.
+            drop_ratio: dropout for OGB baselines.
+            JK: jumping-knowledge mode for OGB baselines (``'last'`` / ``'sum'``).
+            graph_pooling: ``'sum'`` | ``'mean'`` | ``'max'`` | ``'attention'`` | ``'set2set'``.
+        """
         super(GNN, self).__init__()
 
         self.num_layers = num_layers
@@ -67,6 +90,10 @@ class GNN(torch.nn.Module):
             self.head = torch.nn.Linear(self.emb_dim, self.num_tasks)
 
     def forward(self, batched_data):
+        """Return graph-level predictions ``(batch_size, num_tasks)``.
+
+        At eval time, outputs are clamped to ``[0, 20]`` (eV-scale gap range).
+        """
         h = self.gnn_node(batched_data)
         h = self.pool(h, batched_data.batch)
         h = self.norm(h)

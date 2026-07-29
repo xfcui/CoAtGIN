@@ -1,8 +1,14 @@
+"""CoAtGIN building blocks: k-hop conv, virtual node, and linear attention.
+
+Paper: Zhang et al., IEEE BIBM 2022.
+  https://ieeexplore.ieee.org/document/9995324/
+  https://doi.org/10.1109/BIBM55620.2022.9995324
+"""
+
 import numpy as np
 import torch as pt
 import torch.nn as nn
 import torch.nn.parameter as nnp
-import torch.nn.functional as nnf
 
 from torch_scatter import scatter
 from torch_geometric.utils import degree
@@ -15,6 +21,8 @@ MAX_DEGREE = 4
 
 # DeepNet: https://arxiv.org/abs/2203.00555v1
 class ScaleLayer(nn.Module):
+    """Learnable per-channel multiplicative scale, log-parameterized."""
+
     def __init__(self, width, scale_init):
         super().__init__()
         self.scale = nnp.Parameter(pt.zeros(width) + np.log(scale_init))
@@ -22,8 +30,11 @@ class ScaleLayer(nn.Module):
     def forward(self, x):
         return pt.exp(self.scale) * x
 
+
 # Graphormer: https://arxiv.org/abs/2106.05234v5
 class ScaleDegreeLayer(nn.Module):
+    """Learnable scale conditioned on clipped node degree (0 .. MAX_DEGREE-1)."""
+
     def __init__(self, width, scale_init):
         super().__init__()
         self.scale = nnp.Parameter(pt.zeros(MAX_DEGREE, width) + np.log(scale_init))
@@ -31,8 +42,11 @@ class ScaleDegreeLayer(nn.Module):
     def forward(self, x, deg):
         return pt.exp(self.scale)[deg] * x
 
+
 # GLU: https://arxiv.org/abs/1612.08083v3
 class GatedLinearBlock(nn.Module):
+    """GLU-style mixer: GroupNorm → gate × value → project back to ``width``."""
+
     def __init__(self, width, num_head, scale_act, dropout=0.1, block_name=None):
         super().__init__()
 
@@ -51,7 +65,10 @@ class GatedLinearBlock(nn.Module):
         xx = self.post(xx).squeeze(-1)
         return xx
 
+
 class GatedLinearBlock2(nn.Module):
+    """Two-stream GLU used inside ``ConvMessage`` (separate gate / value inputs)."""
+
     def __init__(self, width, num_head, scale_act, dropout=0.1):
         super().__init__()
 
@@ -70,6 +87,13 @@ class GatedLinearBlock2(nn.Module):
 
 # VoVNet: https://arxiv.org/abs/1904.09730v1
 class ConvMessage(MessagePassing):
+    """Iterated 1-hop message passing that realizes multi-hop aggregation.
+
+    Runs ``hop * kernel`` propagate steps. Every ``hop`` steps the residual
+    stream is folded back into the working features (VoVNet-style dense reuse).
+    Edge features come from OGB ``BondEncoder``; messages use ``GatedLinearBlock2``.
+    """
+
     def __init__(self, width, width_head, width_scale, hop, kernel, scale_init=0.1):
         super().__init__(aggr="add")
         self.width = width
@@ -101,12 +125,20 @@ class ConvMessage(MessagePassing):
         bond = self.bond_encoder[layer](edge_attr)
         msg = self.msg[layer](x_i + bond, x_j + bond)
         return msg
-        
+
     def update(self, aggr_out):
         return aggr_out
 
+
 # GIN-virtual: https://arxiv.org/abs/2103.09430
 class VirtMessage(nn.Module):
+    """Virtual-node global route with a recurrent residual accumulator ``x_res``.
+
+    Sum-pools nodes per graph, adds the previous virtual state, applies a GLU
+    mixer + scale, then broadcasts back to nodes. ``x_res`` is carried across
+    layers by the caller.
+    """
+
     def __init__(self, width, width_head, width_scale, scale_init=0.01):
         super().__init__()
         self.width = width
@@ -120,8 +152,15 @@ class VirtMessage(nn.Module):
         xx = self.scale(self.msg(xx))[batch]
         return xx, x_res
 
+
 # CosFormer: https://openreview.net/pdf?id=Bl8CQrx2Up4
 class AttMessage(nn.Module):
+    """Linear (CosFormer-style) attention over nodes within each graph.
+
+    Complexity is linear in the number of nodes. Like ``VirtMessage``, maintains
+    a graph-level residual state ``x_res`` across layers.
+    """
+
     def __init__(self, width, width_head, width_scale, scale_init=0.01):
         super().__init__()
         self.width = width
@@ -157,6 +196,27 @@ class AttMessage(nn.Module):
 
 # GIN: https://openreview.net/forum?id=ryGs6iA5Km
 class CoAtGIN(pt.nn.Module):
+    """CoAtGIN node encoder: parallel conv / virt / att routes + GLU mixer.
+
+    Each layer residual-sums:
+      - ``ConvMessage`` (local multi-hop),
+      - optional ``VirtMessage`` (global virtual node),
+      - optional ``AttMessage`` (global linear attention),
+    then mixes with ``GatedLinearBlock``.
+
+    Args:
+        num_layers: number of stacked CoAtGIN layers.
+        emb_dim: hidden width (also atom/bond embedding dim).
+        conv_hop: hops per VoVNet fold inside ``ConvMessage``.
+        conv_kernel: number of VoVNet folds (total propagate steps = hop*kernel).
+        use_virt: enable virtual-node route.
+        use_att: enable linear-attention route.
+        JK, gnn_type: accepted for API compatibility with OGB wrappers; unused.
+
+    Returns:
+        Node embeddings ``(num_nodes, emb_dim)`` for graph pooling in ``gnn.GNN``.
+    """
+
     def __init__(self, num_layers, emb_dim, conv_hop, conv_kernel, use_virt=True, use_att=True, JK=None, gnn_type=None):
         super().__init__()
         self.num_layers = num_layers
@@ -173,7 +233,7 @@ class CoAtGIN(pt.nn.Module):
             self.conv.append(ConvMessage(emb_dim, 16, 1, conv_hop, conv_kernel))
             self.virt.append(VirtMessage(emb_dim, 16, 2) if use_virt else None)
             self.att.append(AttMessage(emb_dim, 16, 2) if use_att else None)
-            self.main.append(GatedLinearBlock(emb_dim, 16, 3))  # debug
+            self.main.append(GatedLinearBlock(emb_dim, 16, 3))
 
     def forward(self, batched_data):
         x, edge_index, edge_attr, batch = batched_data.x, batched_data.edge_index, batched_data.edge_attr, batched_data.batch
@@ -196,4 +256,3 @@ class CoAtGIN(pt.nn.Module):
             h_out = h_in = self.main[layer](h_out)
 
         return h_out
-

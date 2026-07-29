@@ -1,3 +1,9 @@
+"""OGB-style GIN / GCN node encoders used as ablation baselines.
+
+These stacks are selected via ``GNN(..., virtual_node=0|1)``. The published
+CoAtGIN model lives in ``modify.py``. Adapted from the OGB-LSC PCQM examples.
+"""
+
 import torch
 from torch_geometric.nn import MessagePassing
 import torch.nn.functional as F
@@ -9,6 +15,8 @@ import math
 
 ### GIN convolution along the graph structure
 class GINConv(MessagePassing):
+    """GIN message-passing layer with OGB bond encoder."""
+
     def __init__(self, emb_dim):
         '''
             emb_dim (int): node embedding dimensionality
@@ -35,6 +43,8 @@ class GINConv(MessagePassing):
 
 ### GCN convolution along the graph structure
 class GCNConv(MessagePassing):
+    """GCN message-passing layer with OGB bond encoder and degree normalization."""
+
     def __init__(self, emb_dim):
         super(GCNConv, self).__init__(aggr='add')
 
@@ -66,10 +76,8 @@ class GCNConv(MessagePassing):
 
 ### GNN to generate node embedding
 class GNN_node(torch.nn.Module):
-    """
-    Output:
-        node representations
-    """
+    """Stacked GIN/GCN layers without a virtual node. Returns node embeddings."""
+
     def __init__(self, num_layers, emb_dim, drop_ratio = 0.5, JK = "last", residual = False, gnn_type = 'gin'):
         '''
             emb_dim (int): node embedding dimensionality
@@ -137,10 +145,8 @@ class GNN_node(torch.nn.Module):
 
 ### Virtual GNN to generate node embedding
 class GNN_node_Virtualnode(torch.nn.Module):
-    """
-    Output:
-        node representations
-    """
+    """Stacked GIN/GCN with a per-graph virtual node (OGB baseline)."""
+
     def __init__(self, num_layers, emb_dim, drop_ratio = 0.5, JK = "last", residual = False, gnn_type = 'gin'):
         '''
             emb_dim (int): node embedding dimensionality

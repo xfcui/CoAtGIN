@@ -1,3 +1,11 @@
+"""Train / evaluate CoAtGIN on PCQM4Mv2 (OGB-LSC).
+
+Paper: https://ieeexplore.ieee.org/document/9995324/
+Run from this directory so ``data/`` and local imports resolve:
+
+    python3 -BuW ignore train.py --gnn coat3211 --checkpoint_dir . --save_test_dir .
+"""
+
 import torch
 from torch_geometric.loader import DataLoader
 import torch.optim as optim
@@ -22,6 +30,7 @@ reg_criterion = torch.nn.L1Loss()
 
 learn_rate, weight_decay = 3e-3, 2e-2
 def param(model, lr=learn_rate, wd=weight_decay):
+    """Build Adan param groups by name: embeddings/scale/bias (no WD), weights, head."""
     param_groups = [{'params': [], 'lr': lr,   'weight_decay': 0},
                     {'params': [], 'lr': lr,   'weight_decay': wd},
                     {'params': [], 'lr': lr/2, 'weight_decay': wd*2}]
@@ -37,6 +46,7 @@ def param(model, lr=learn_rate, wd=weight_decay):
     return param_groups
 
 def train(model, loader, optimizer):
+    """One training epoch; returns mean L1 loss over batches."""
     model.train()
     loss_accum = 0
 
@@ -54,6 +64,7 @@ def train(model, loader, optimizer):
     return loss_accum / (step + 1)
 
 def eval(model, loader, evaluator):
+    """Validation MAE via ``PCQM4Mv2Evaluator``."""
     model.eval()
     y_true = []
     y_pred = []
@@ -75,6 +86,7 @@ def eval(model, loader, evaluator):
     return evaluator.eval(input_dict)["mae"]
 
 def test(model, loader):
+    """Collect test-dev predictions for an OGB submission file."""
     model.eval()
     y_pred = []
 
@@ -92,32 +104,32 @@ def test(model, loader):
 
 
 def main():
-    # Training settings
-    parser = argparse.ArgumentParser(description='GNN baselines on pcqm4m with Pytorch Geometrics')
+    parser = argparse.ArgumentParser(
+        description='CoAtGIN on PCQM4Mv2 (IEEE BIBM 2022; https://ieeexplore.ieee.org/document/9995324/)')
     parser.add_argument('--gnn', type=str, default='coat3211',
-                        help='GNN coat3211 (default: coat3211)')
+                        help='architecture preset: coat1100|2100|3100|3200|3210|3201|3211 (default: coat3211)')
     parser.add_argument('--graph_pooling', type=str, default='sum',
-                        help='graph pooling strategy mean or sum (default: sum)')
+                        help='graph pooling: sum|mean|max|attention|set2set (default: sum)')
     parser.add_argument('--drop_ratio', type=float, default=0,
-                        help='dropout ratio (default: 0)')
+                        help='dropout ratio for OGB baselines (default: 0)')
     parser.add_argument('--num_layers', type=int, default=4,
                         help='number of GNN message passing layers (default: 4)')
     parser.add_argument('--emb_dim', type=int, default=256,
-                        help='dimensionality of hidden units in GNNs (default: 256)')
+                        help='hidden / embedding width (default: 256)')
     parser.add_argument('--batch_size', type=int, default=512,
-                        help='input batch size for training (default: 512)')
+                        help='batch size (default: 512)')
     parser.add_argument('--warmups', type=int, default=20,
-                        help='number of warmups to train (default: 20)')
+                        help='warmup epochs before decay (default: 20)')
     parser.add_argument('--epochs', type=int, default=120,
-                        help='number of epochs to train (default: 120)')
+                        help='epochs after warmup (default: 120)')
     parser.add_argument('--num_workers', type=int, default=4,
-                        help='number of workers (default: 4)')
+                        help='DataLoader workers (default: 4)')
     parser.add_argument('--log_dir', type=str, default="",
-                        help='tensorboard log directory')
+                        help='TensorBoard log directory (disabled if empty)')
     parser.add_argument('--checkpoint_dir', type=str, default = '',
-                        help='directory to save checkpoint')
+                        help='directory for best-val checkpoint.pt (disabled if empty)')
     parser.add_argument('--save_test_dir', type=str, default = '',
-                        help='directory to save test submission file')
+                        help='directory for OGB test-dev submission when val MAE < 0.091')
     args = parser.parse_args()
     print(args)
 
